@@ -33,11 +33,29 @@ bool canStartPayload = false;
 bool shouldStop = false;
 bool isInit = false;
 lua_State* game_state;
+
+int __cdecl debug_print(lua_State* lua_state)
+{
+    int v1; // esi
+    const char* v2; // ebx
+    const char* v3; // esi
+
+    v1 = lua_gettop(lua_state);
+    v2 = lua_tolstring(lua_state, -v1, 0);
+    v3 = lua_tolstring(lua_state, 1 - v1, 0);
+    std::cout << v3 << " " << v2 << std::endl;
+    return 0;
+}
+
 __int64 loadbuffer(lua_State* L, const char* buffer, size_t size, const char* name)
 {
     if (!isInit)
     {
-        game_state = reinterpret_cast<lua_State*>(L);
+        game_state = L;
+        lua_pushcfunction(L, &debug_print);
+        lua_setglobal(L, "debug_print");
+        luaL_dostring(L, "debug_print('hi', 'test')");
+        isInit = true;
     }
     //MH_DisableHook(reinterpret_cast<void**>(luaL_loadbufferTarget));
     
@@ -96,6 +114,8 @@ void OutputDebugStringADetour(LPCSTR lpOutputString)
 {
     std::cout << lpOutputString << std::endl;
 }
+
+
 
 DWORD WINAPI Menue(HINSTANCE hModule) {
     AllocConsole();
@@ -156,7 +176,7 @@ DWORD WINAPI Menue(HINSTANCE hModule) {
     std::cout << std::hex << game_state << std::endl;
     
     std::cin.ignore();
-    luaL_dostring(game_state, "my_debug_print('hi')");
+    
     std::cin.ignore();
 
     shutdown(fp, "Byby");
